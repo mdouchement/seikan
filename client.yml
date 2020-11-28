@@ -1,0 +1,24 @@
+identifier: client#1
+secret: sk-267xDDvMBvdeMXuP4gEJToFmbQxWKMWfcX8H46NpPjQg
+public: pk-AT8MkD3E7p8ivZcaFG2YsSQCrJKwgdsFRbLgZJoaG28h
+server:
+  address: tcp://localhost:4242
+  public: pk-FHpBuj1zYgsbRkD9UhPcHTxrU5jbeSsoUYciFj9yTrFh
+
+log:
+  level: info
+  force_color: true
+  force_formating: true
+
+# Allowing incoming traffic
+inbound: true
+# List of allowed destination requests on the client host.
+# An empty array means all destinations are allowed.
+# allow_list: []
+allow_list:
+  - localhost:5000
+
+# Forwarding rules from client to server
+outbounds:
+- source: localhost:6379      # Listener on the localhost
+  destination: localhost:6379 # The Redis spawned on the server

@@ -1,0 +1,21 @@
+# Use "tcp://0.0.0.0:4242" for global binding
+address: tcp://localhost:4242
+secret: sk-E4Z9q2sSxgW91cAxqMnq2P84LEoJN16iB2NBXK5sKJnp
+public: pk-FHpBuj1zYgsbRkD9UhPcHTxrU5jbeSsoUYciFj9yTrFh
+clients:
+  client#0: pk-DGtare69Q7ZfqQ7xxYaqCRx6PD5qU9gHtdQMWtAPAvsD
+  client#1: pk-AT8MkD3E7p8ivZcaFG2YsSQCrJKwgdsFRbLgZJoaG28h
+
+log:
+  force_color: true
+  force_formating: true
+
+# List of allowed outbounds destination on the server.
+# An empty array means all destinations are allowed.
+allow_list: []
+
+# Forwarding rules from server to client
+outbounds:
+- identifier: client#1
+  source: localhost:5001      # Listener on the localhost
+  destination: localhost:5000 # The web server on the client
