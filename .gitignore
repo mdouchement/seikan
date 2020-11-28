@@ -1,0 +1,4 @@
+**.DS_Store
+.envrc
+dist/
+TODO.md
