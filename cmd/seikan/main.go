@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"runtime"
 
 	"github.com/mdouchement/seikan/cmd/seikan/client"
 	"github.com/mdouchement/seikan/cmd/seikan/identity"
@@ -20,7 +21,7 @@ func main() {
 	c := &cobra.Command{
 		Use:     "seikan",
 		Short:   "TCP tunnels leveraging Noise Protocol",
-		Version: fmt.Sprintf("%s - build %.7s @ %s", version, revision, date),
+		Version: fmt.Sprintf("%s - build %.7s @ %s - %s", version, revision, date, runtime.Version()),
 		Args:    cobra.NoArgs,
 	}
 	c.AddCommand(server.Command())
