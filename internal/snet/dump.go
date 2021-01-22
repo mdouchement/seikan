@@ -36,7 +36,7 @@ func (d *dumper) Close() error {
 
 func (d *dumper) dump(p []byte) {
 	if d.hexdump && len(p) > 0 {
-		hex.Dump(p)
+		os.Stdout.WriteString(hex.Dump(p))
 		return
 	}
 	os.Stdout.Write(p)
