@@ -28,7 +28,7 @@ func (c *cipher) EncryptRekey() {
 }
 
 func (c *cipher) Encrypt(out, ad, plaintext []byte) ([]byte, error) {
-	return c.tx.Encrypt(out, ad, plaintext), nil
+	return c.tx.Encrypt(out, ad, plaintext)
 }
 
 func (c *cipher) DecryptRekey() {
