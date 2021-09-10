@@ -2,3 +2,4 @@
 .envrc
 dist/
 TODO.md
+release.event.json
