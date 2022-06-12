@@ -14,7 +14,7 @@ import (
 type Inbound struct {
 	log          logger.Logger
 	cfg          config.Client
-	destinations map[string]bool
+	destinations map[string]config.Allow
 }
 
 // NewInbound returns a new Inbound.
@@ -52,9 +52,10 @@ func (in *Inbound) establish(destination string) error {
 	log := in.log.WithPrefixf("[%s]", basex.GenerateID()).WithPrefix("[ingoing ]")
 
 	tun := smux.Tunnel{
-		Source:      "remote_side",
-		Remote:      in.cfg.Server.Address,
-		Destination: destination,
+		Source:       "remote_side",
+		Remote:       in.cfg.Server.Address,
+		Destination:  destination,
+		IgnoreErrors: in.destinations[destination].IgnoreErrorsRegexp,
 	}
 
 	c, err := connect(log, in.cfg, tun)
@@ -88,7 +89,7 @@ func (in *Inbound) establish(destination string) error {
 	return smux.Listen()
 }
 
-func (in *Inbound) getDestinations() (map[string]bool, error) {
+func (in *Inbound) getDestinations() (map[string]config.Allow, error) {
 	log := in.log.WithPrefixf("[%s]", basex.GenerateID()).WithPrefix("[ingoing ]")
 
 	c, err := connect(log, in.cfg, smux.Tunnel{Remote: in.cfg.Server.Address})
@@ -110,16 +111,16 @@ func (in *Inbound) getDestinations() (map[string]bool, error) {
 
 	//
 
-	m := make(map[string]bool)
+	m := make(map[string]config.Allow)
 	for _, wanted := range resp.(*control.InboundsResp).Inbounds {
 		for _, allowed := range in.cfg.AllowList {
-			if wanted == allowed {
-				m[wanted] = true
+			if wanted == allowed.Endpoint {
+				m[wanted] = allowed.Allow
 				break
 			}
 		}
 
-		if !m[wanted] {
+		if _, ok := m[wanted]; !ok {
 			in.log.Warnf("Dropped destination %s", wanted)
 		}
 	}

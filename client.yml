@@ -17,6 +17,10 @@ inbound: true
 # allow_list: []
 allow_list:
   - localhost:5000
+  - endpoint: localhost:5001
+    ignore_errors:
+      # You can build your Golang's regexp on https://regex101.com/
+      - connection refused
 
 # Forwarding rules from client to server
 outbounds:

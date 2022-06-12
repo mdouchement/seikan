@@ -2,7 +2,9 @@ package config
 
 import (
 	"io/ioutil"
+	"regexp"
 
+	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 )
 
@@ -27,6 +29,17 @@ type (
 		Source      string `yaml:"source"`
 		Destination string `yaml:"destination"`
 	}
+
+	// An Allow is a list of allowed endpoints wit options.
+	Allow struct {
+		Endpoint           string           `yaml:"endpoint"`
+		IgnoreErrors       []string         `yaml:"ignore_errors"`
+		IgnoreErrorsRegexp []*regexp.Regexp `yaml:"-"`
+	}
+
+	AllowWrapper struct {
+		Allow
+	}
 )
 
 // A Server holds server's configuration fields.
@@ -34,20 +47,20 @@ type Server struct {
 	Connection `yaml:",inline"`
 	Clients    map[string]string `yaml:"clients"`
 	Log        Log               `yaml:"log"`
-	AllowList  []string          `yaml:"allow_list"`
+	AllowList  []AllowWrapper    `yaml:"allow_list"`
 	Outbounds  []Outbound        `yaml:"outbounds"`
 }
 
 // A Client holds client's configuration fields.
 type Client struct {
-	Identifier string     `yaml:"identifier"`
-	Server     Connection `yaml:"server"`
-	Secret     string     `yaml:"secret"`
-	Public     string     `yaml:"public"`
-	Log        Log        `yaml:"log"`
-	Inbound    bool       `yaml:"inbound"`
-	AllowList  []string   `yaml:"allow_list"`
-	Outbounds  []Outbound `yaml:"outbounds"`
+	Identifier string         `yaml:"identifier"`
+	Server     Connection     `yaml:"server"`
+	Secret     string         `yaml:"secret"`
+	Public     string         `yaml:"public"`
+	Log        Log            `yaml:"log"`
+	Inbound    bool           `yaml:"inbound"`
+	AllowList  []AllowWrapper `yaml:"allow_list"`
+	Outbounds  []Outbound     `yaml:"outbounds"`
 }
 
 // Load loads a configuration file.
@@ -58,4 +71,25 @@ func Load(filename string, cfg interface{}) error {
 	}
 
 	return yaml.Unmarshal(payload, cfg)
+}
+
+func (a *AllowWrapper) UnmarshalYAML(value *yaml.Node) error {
+	if value.Tag == "!!str" {
+		return value.Decode(&a.Endpoint)
+	}
+
+	if err := value.Decode(&a.Allow); err != nil {
+		return err
+	}
+
+	for _, expr := range a.IgnoreErrors {
+		re, err := regexp.Compile(expr)
+		if err != nil {
+			return errors.Wrapf(err, "`%s`", expr)
+		}
+
+		a.IgnoreErrorsRegexp = append(a.IgnoreErrorsRegexp, re)
+	}
+
+	return nil
 }
