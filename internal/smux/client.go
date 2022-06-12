@@ -3,6 +3,7 @@ package smux
 import (
 	"fmt"
 	"net"
+	"regexp"
 	"time"
 
 	"github.com/hashicorp/yamux"
@@ -18,6 +19,7 @@ type Client struct {
 	listener *DropListener
 	rc       net.Conn
 	session  *yamux.Session
+	ignore   []*regexp.Regexp
 }
 
 // NewClient returns a new Client.
@@ -34,6 +36,7 @@ func NewClient(l logger.Logger, tun Tunnel, listener *DropListener, rc net.Conn)
 		listener: listener,
 		rc:       rc,
 		session:  session,
+		ignore:   tun.IgnoreErrors,
 	}
 	client.log.Infof("Session oppened %s", tun)
 
@@ -54,6 +57,13 @@ func (cl *Client) Establish() error {
 
 				stream, err := cl.session.OpenStream()
 				if err != nil {
+					for _, re := range cl.ignore {
+						if re.MatchString(err.Error()) {
+							cl.log.WithError(err).Debug("failed to open stream")
+							return
+						}
+					}
+
 					cl.log.WithError(err).Warn("failed to open stream")
 					return
 				}
@@ -61,6 +71,13 @@ func (cl *Client) Establish() error {
 
 				pipe, err := snet.NewPipe(c, stream)
 				if err != nil {
+					for _, re := range cl.ignore {
+						if re.MatchString(err.Error()) {
+							cl.log.WithError(err).Debug("failed to establish pipe")
+							return
+						}
+					}
+
 					cl.log.WithError(err).Warn("failed to establish pipe")
 					return
 				}
@@ -76,6 +93,14 @@ func (cl *Client) Establish() error {
 						entry.Debugf("pipe failure (%s)", err)
 						return
 					}
+
+					for _, re := range cl.ignore {
+						if re.MatchString(err.Error()) {
+							entry.Debugf("pipe failure (%s)", err)
+							return
+						}
+					}
+
 					entry.Errorf("pipe failure (%s)", err)
 				}
 			}()

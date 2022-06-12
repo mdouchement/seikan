@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"regexp"
 
 	"github.com/hashicorp/yamux"
 	"github.com/mdouchement/logger"
@@ -18,6 +19,7 @@ type Server struct {
 	tun     Tunnel
 	log     logger.Logger
 	session *yamux.Session
+	ignore  []*regexp.Regexp
 }
 
 // NewServer returns a new Server.
@@ -37,6 +39,7 @@ func NewServer(l logger.Logger, tun Tunnel, rc net.Conn) (*Server, error) {
 		tun:     tun,
 		log:     l,
 		session: session,
+		ignore:  tun.IgnoreErrors,
 	}, nil
 }
 
@@ -57,6 +60,13 @@ func (s *Server) Listen() error {
 
 			pipe, err := snet.NewPipeTCP(sc, s.tun.Destination) // TODO: allow UDP too
 			if err != nil {
+				for _, re := range s.ignore {
+					if re.MatchString(err.Error()) {
+						s.log.WithError(err).Debug("failed to establish pipe session")
+						return
+					}
+				}
+
 				s.log.WithError(err).Error("failed to establish pipe session")
 				return
 			}
@@ -72,6 +82,14 @@ func (s *Server) Listen() error {
 					entry.Debugf("pipe failure (%s)", err)
 					return
 				}
+
+				for _, re := range s.ignore {
+					if re.MatchString(err.Error()) {
+						entry.Debugf("pipe failure (%s)", err)
+						return
+					}
+				}
+
 				entry.Errorf("pipe failure (%s)", err)
 			}
 		}()

@@ -303,7 +303,7 @@ func (s *server) allowed(destination string) bool {
 	}
 
 	for _, allowed := range s.cfg.AllowList {
-		if destination == allowed {
+		if destination == allowed.Endpoint {
 			return true
 		}
 	}

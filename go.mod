@@ -7,7 +7,7 @@ require (
 	github.com/fxamacker/cbor/v2 v2.4.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/yamux v0.0.0-20211028200310-0bc27b27de87
-	github.com/klauspost/compress v1.15.1
+	github.com/klauspost/compress v1.15.6
 	github.com/mdouchement/basex v0.0.0-20200802103314-a4f42a0e6590
 	github.com/mdouchement/logger v0.0.0-20200719134033-63d0eda5567d
 	github.com/mendsley/gomnet v0.0.0-20150905011337-ac10ddc4555c
@@ -15,8 +15,8 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.4.0
 	github.com/stretchr/testify v1.7.0
-	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
+	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -29,6 +29,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
-	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad // indirect
-	golang.org/x/term v0.0.0-20220411215600-e5f449aeb171 // indirect
+	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
+	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467 // indirect
 )
