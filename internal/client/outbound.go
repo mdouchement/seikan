@@ -1,6 +1,7 @@
 package client
 
 import (
+	"fmt"
 	"net"
 
 	"github.com/mdouchement/basex"
@@ -47,7 +48,7 @@ func (out *Outbound) Establish() error {
 				log := out.log.WithPrefixf("[%s]", basex.GenerateID()).WithPrefix("[outgoing]")
 				err := out.establish(log, o.Source, o.Destination)
 				if seikan.IsRetryNewError(prev, err) {
-					log.Errorf("closed (%s)", err)
+					log.Errorf("closed (%s)", err) // TODO: if it's retryable, we should not logs closed?
 					return err
 				}
 				return err
@@ -80,7 +81,7 @@ func (out *Outbound) establish(log logger.Logger, source string, destination str
 
 	_, err = control.Do(rc, bind)
 	if err != nil {
-		return errors.Wrap(err, "control")
+		return fmt.Errorf("control: %w: %s: %w", seikan.ErrNotRetayable, destination, err)
 	}
 
 	//

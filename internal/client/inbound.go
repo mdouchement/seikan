@@ -1,10 +1,13 @@
 package client
 
 import (
+	"context"
+
 	"github.com/mdouchement/basex"
 	"github.com/mdouchement/logger"
 	"github.com/mdouchement/seikan/internal/config"
 	"github.com/mdouchement/seikan/internal/control"
+	"github.com/mdouchement/seikan/internal/filter"
 	"github.com/mdouchement/seikan/internal/seikan"
 	"github.com/mdouchement/seikan/internal/smux"
 	"github.com/pkg/errors"
@@ -14,6 +17,7 @@ import (
 type Inbound struct {
 	log          logger.Logger
 	cfg          config.Client
+	approver     *filter.Approver
 	destinations map[string]config.Allow
 }
 
@@ -22,6 +26,21 @@ func NewInbound(cfg config.Client, l logger.Logger) (in *Inbound, err error) {
 	in = &Inbound{
 		cfg: cfg,
 		log: l,
+	}
+
+	var stricts, cidrs []string
+	for _, allowed := range cfg.AllowList {
+		if allowed.Type == "cidr" {
+			cidrs = append(cidrs, allowed.Endpoint)
+			continue
+		}
+
+		stricts = append(stricts, allowed.Endpoint)
+	}
+
+	in.approver, err = filter.NewAppover(stricts, cidrs)
+	if err != nil {
+		return in, err
 	}
 
 	in.destinations, err = in.getDestinations()
@@ -109,19 +128,24 @@ func (in *Inbound) getDestinations() (map[string]config.Allow, error) {
 		return nil, errors.Wrap(err, "control")
 	}
 
-	//
+	// Check if server's destinations on client host are allowed.
 
 	m := make(map[string]config.Allow)
 	for _, wanted := range resp.(*control.InboundsResp).Inbounds {
-		for _, allowed := range in.cfg.AllowList {
-			if wanted == allowed.Endpoint {
-				m[wanted] = allowed.Allow
-				break
-			}
+		err = in.approver.Allowed(context.Background(), wanted)
+		if err != nil {
+			in.log.WithError(err).Warnf("Dropped destination %s", wanted)
+			continue
 		}
 
-		if _, ok := m[wanted]; !ok {
-			in.log.Warnf("Dropped destination %s", wanted)
+		// Here we are keeping allowed destinations for the next loop.
+		m[wanted] = config.Allow{}
+	}
+
+	for _, allowed := range in.cfg.AllowList {
+		if _, ok := m[allowed.Endpoint]; ok {
+			// We overrides with allows that contains the IgnoreErrors patterns loaded from configuration.
+			m[allowed.Endpoint] = allowed.Allow
 		}
 	}
 
