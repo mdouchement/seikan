@@ -45,6 +45,8 @@ github.com/mdouchement/basex v0.0.0-20200802103314-a4f42a0e6590 h1:hf4QI5v0QdSWr
 github.com/mdouchement/basex v0.0.0-20200802103314-a4f42a0e6590/go.mod h1:2BorkfzJbHmhF09lpuubNCjc7WekS/dGoXwvkDe2uSM=
 github.com/mdouchement/logger v0.0.0-20221125154557-2b5ca98e025e h1:odbJFE4vjflXKFPE7zW8N93vdpojsk0ynR2AvUKuFF8=
 github.com/mdouchement/logger v0.0.0-20221125154557-2b5ca98e025e/go.mod h1:OSNpZ1VVeITfykS8TlSNVksF6YV0ByU6C5FdeWxETlY=
+github.com/mdouchement/logger v0.0.0-20230517135359-57fe2b915a12 h1:+1kz6LLys/bN6cwrSw6vHz2eHqN+mMhJllAueDGYjfw=
+github.com/mdouchement/logger v0.0.0-20230517135359-57fe2b915a12/go.mod h1:OSNpZ1VVeITfykS8TlSNVksF6YV0ByU6C5FdeWxETlY=
 github.com/mendsley/gomnet v0.0.0-20150905011337-ac10ddc4555c h1:/AuniURH0826CkTTHr61EAoaSKVeCpsyduQNuPr1TSw=
 github.com/mendsley/gomnet v0.0.0-20150905011337-ac10ddc4555c/go.mod h1:L7oraFs+XR+5kBM0jKKjRShRbpC//s9vbMLztOf3Mu4=
 github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d h1:5PJl274Y63IEHC+7izoQE9x6ikvDFZS2mDVS3drnohI=

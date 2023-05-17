@@ -10,7 +10,7 @@ require (
 	github.com/hashicorp/yamux v0.1.1
 	github.com/klauspost/compress v1.16.0
 	github.com/mdouchement/basex v0.0.0-20200802103314-a4f42a0e6590
-	github.com/mdouchement/logger v0.0.0-20221125154557-2b5ca98e025e
+	github.com/mdouchement/logger v0.0.0-20230517135359-57fe2b915a12
 	github.com/mendsley/gomnet v0.0.0-20150905011337-ac10ddc4555c
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.0
