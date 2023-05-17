@@ -32,6 +32,7 @@ type (
 
 	// An Allow is a list of allowed endpoints wit options.
 	Allow struct {
+		Type               string           `yaml:"type"`
 		Endpoint           string           `yaml:"endpoint"`
 		IgnoreErrors       []string         `yaml:"ignore_errors"`
 		IgnoreErrorsRegexp []*regexp.Regexp `yaml:"-"`
@@ -80,6 +81,14 @@ func (a *AllowWrapper) UnmarshalYAML(value *yaml.Node) error {
 
 	if err := value.Decode(&a.Allow); err != nil {
 		return err
+	}
+
+	if a.Type != "" && a.Type != "cidr" {
+		return errors.New("type must be empty or a cidr")
+	}
+
+	if a.Type == "cidr" && len(a.IgnoreErrors) > 0 {
+		return errors.New("ignore_errors cannot be be used for a cidr allow_list")
 	}
 
 	for _, expr := range a.IgnoreErrors {

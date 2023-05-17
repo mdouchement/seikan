@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"io"
 	"io/ioutil"
 	"net"
@@ -10,6 +11,7 @@ import (
 	"github.com/mdouchement/logger"
 	"github.com/mdouchement/seikan/internal/config"
 	"github.com/mdouchement/seikan/internal/control"
+	"github.com/mdouchement/seikan/internal/filter"
 	"github.com/mdouchement/seikan/internal/noise"
 	"github.com/mdouchement/seikan/internal/seikan"
 	"github.com/mdouchement/seikan/internal/smux"
@@ -26,6 +28,7 @@ type (
 	server struct {
 		cfg      config.Server
 		log      logger.Logger
+		approver *filter.Approver
 		outbound *Outbound
 	}
 
@@ -39,7 +42,22 @@ func New(cfg config.Server, l logger.Logger) (Server, error) {
 		log: l,
 	}
 
+	var stricts, cidrs []string
+	for _, allowed := range cfg.AllowList {
+		if allowed.Type == "cidr" {
+			cidrs = append(cidrs, allowed.Endpoint)
+			continue
+		}
+
+		stricts = append(stricts, allowed.Endpoint)
+	}
+
 	var err error
+	s.approver, err = filter.NewAppover(stricts, cidrs)
+	if err != nil {
+		return s, err
+	}
+
 	s.outbound, err = NewOutbound(cfg, l)
 	return s, err
 }
@@ -118,10 +136,19 @@ func (s *server) Listen() error {
 			var stream stream
 			for {
 				pdu, err := control.Decode(c)
+				if errors.Is(err, io.EOF) {
+					log.Error("connection closed during control")
+				}
+
 				if err != nil {
 					log.WithError(err).Error("failed to receive control")
 
-					resp := control.NewError(pdu.PID())
+					pid := "unkown"
+					if pdu != nil {
+						pid = pdu.PID()
+					}
+
+					resp := control.NewError(pid)
 					resp.Status = http.StatusInternalServerError
 					resp.Message = "failed to receive control"
 					control.EncodeTo(c, resp)
@@ -206,7 +233,7 @@ func (s *server) control(log logger.Logger, sessid string, pdu control.PDU) (con
 			resp.Status = http.StatusUnprocessableEntity
 			resp.Message = "missing indentifier or address"
 
-			return resp, nil, true
+			return resp, nil, false
 		}
 
 		if p.Identifier != sessid {
@@ -216,17 +243,18 @@ func (s *server) control(log logger.Logger, sessid string, pdu control.PDU) (con
 			resp.Status = http.StatusForbidden
 			resp.Message = "invalid identifier"
 
-			return resp, nil, true
+			return resp, nil, false
 		}
 
-		if !s.allowed(p.Address) {
-			log.Warnf("Rejected %s", p.Address)
+		err := s.approver.Allowed(context.Background(), p.Address)
+		if len(s.cfg.AllowList) > 0 && err != nil {
+			log.WithError(err).Warnf("Rejected %s", p.Address)
 
 			resp := control.NewError(pdu.PID())
 			resp.Status = http.StatusUnprocessableEntity
-			resp.Message = "missing indentifier or address"
+			resp.Message = "rejected indentifier or address"
 
-			return resp, nil, true
+			return resp, nil, false
 		}
 
 		//
@@ -295,19 +323,6 @@ func (s *server) control(log logger.Logger, sessid string, pdu control.PDU) (con
 
 		return resp, nil, true
 	}
-}
-
-func (s *server) allowed(destination string) bool {
-	if len(s.cfg.AllowList) == 0 {
-		return true
-	}
-
-	for _, allowed := range s.cfg.AllowList {
-		if destination == allowed.Endpoint {
-			return true
-		}
-	}
-	return false
 }
 
 func (s *server) recipient(derived []byte) (string, string, error) {

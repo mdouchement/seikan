@@ -1,8 +1,12 @@
 package seikan
 
 import (
+	"errors"
 	"time"
 )
+
+// ErrNotRetayable is used when it's not used to perform a retry.
+var ErrNotRetayable = errors.New("not retryable")
 
 // Retry applies an exponential backoff if h returns an error.
 func Retry(h func(error) error) {
@@ -12,6 +16,10 @@ func Retry(h func(error) error) {
 
 	for {
 		err = h(err)
+		if errors.Is(err, ErrNotRetayable) {
+			return
+		}
+
 		//
 		time.Sleep(delay)
 		delay *= 2

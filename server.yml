@@ -12,7 +12,9 @@ log:
 
 # List of allowed outbounds destination on the server.
 # An empty array means all destinations are allowed.
-allow_list: []
+allow_list:
+- type: cidr
+  endpoint: 192.168.1.1/24
 
 # Forwarding rules from server to client
 outbounds:
