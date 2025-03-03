@@ -4,7 +4,7 @@
 version: '3'
 
 vars:
-  VERSION: 0.2.2
+  VERSION: 0.2.3
   REVISION: { sh: git rev-parse HEAD }
 
 env:
@@ -52,6 +52,16 @@ tasks:
       - task: checksum
         vars:
           BINARY_NAME: seikan-darwin-amd64
+
+      - task: build
+        vars:
+          BINARY_NAME: seikan-darwin-arm64
+          ENTRYPOINT: ./cmd/seikan
+          TARGET_DIST: GOOS=darwin GOARCH=arm64
+
+      - task: checksum
+        vars:
+          BINARY_NAME: seikan-darwin-arm64
 
       - task: build
         vars:
