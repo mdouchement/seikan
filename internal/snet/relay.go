@@ -18,13 +18,11 @@ func Relay(local, remote net.Conn) error {
 	// local = Dumper(local)
 	// remote = Dumper(remote)
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 
 		_, err1 = io.Copy(remote, local)
 		remote.SetDeadline(time.Now().Add(delay)) // wake up the other goroutine blocking on remote
-	}()
+	})
 
 	_, err = io.Copy(local, remote)
 	local.SetDeadline(time.Now().Add(delay)) // wake up the other goroutine blocking on local

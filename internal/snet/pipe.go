@@ -1,9 +1,8 @@
 package snet
 
 import (
+	"fmt"
 	"net"
-
-	"github.com/pkg/errors"
 )
 
 // A Pipe pipes two net.Conn.
@@ -16,7 +15,7 @@ type Pipe struct {
 func NewPipeTCP(c net.Conn, remote string) (*Pipe, error) {
 	rc, err := net.Dial("tcp", remote)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to connect to remote")
+		return nil, fmt.Errorf("failed to connect to remote: %w", err)
 	}
 	rc.(*net.TCPConn).SetKeepAlive(true)
 
@@ -34,7 +33,7 @@ func NewPipe(c, rc net.Conn) (*Pipe, error) {
 // Relay runs the pipeline.
 func (s *Pipe) Relay() error {
 	err := Relay(s.c, s.rc)
-	return errors.Wrap(err, "pipe-relay")
+	return fmt.Errorf("pipe-relay: %w", err)
 }
 
 // LocalConn returns the local connection.

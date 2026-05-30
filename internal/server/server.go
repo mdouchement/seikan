@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net"
@@ -16,7 +18,6 @@ import (
 	"github.com/mdouchement/seikan/internal/seikan"
 	"github.com/mdouchement/seikan/internal/smux"
 	"github.com/mdouchement/seikan/internal/snet"
-	"github.com/pkg/errors"
 )
 
 type (
@@ -66,7 +67,7 @@ func New(cfg config.Server, l logger.Logger) (Server, error) {
 func (s *server) Listen() error {
 	l, err := snet.Listen(s.cfg.Address)
 	if err != nil {
-		return errors.Wrapf(err, "failed to listen on %s", s.cfg.Address)
+		return fmt.Errorf("failed to listen on %s: %w", s.cfg.Address, err)
 	}
 
 	s.log.Infof("Listening on %s", s.cfg.Address)
@@ -110,7 +111,7 @@ func (s *server) Listen() error {
 			log.Debug("Performing Noise handshake")
 			c, err = noise.Handshake(c, identity(s.cfg), recipient, true)
 			if err != nil {
-				if errors.Cause(err) != io.EOF {
+				if !errors.Is(err, io.EOF) {
 					log = log.WithError(err)
 				}
 				log.Error("failed to perform handshake")
@@ -268,7 +269,7 @@ func (s *server) control(log logger.Logger, sessid string, pdu control.PDU) (con
 		stream := func(c net.Conn) error {
 			smux, err := smux.NewServer(log.WithPrefix("[ingoing ]"), tun, c)
 			if err != nil {
-				return errors.Wrapf(err, "failed to establish connection for %s.%s", p.Identifier, p.Address)
+				return fmt.Errorf("failed to establish connection for %s.%s: %w", p.Identifier, p.Address, err)
 			}
 			defer smux.Close()
 

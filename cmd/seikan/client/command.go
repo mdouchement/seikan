@@ -2,6 +2,7 @@ package client
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"os/signal"
 	"regexp"
@@ -9,7 +10,6 @@ import (
 	"github.com/mdouchement/logger"
 	"github.com/mdouchement/seikan/internal/client"
 	"github.com/mdouchement/seikan/internal/config"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -28,33 +28,34 @@ func Command() *cobra.Command {
 				return err
 			}
 
-			l := logrus.New()
+			level := slog.LevelInfo
 			if cfg.Log.Level != "" {
-				level, err := logrus.ParseLevel(cfg.Log.Level)
+				level, err = logger.ParseSlogLevel(cfg.Log.Level)
 				if err != nil {
 					return err
 				}
 				fmt.Println("Log level:", cfg.Log.Level)
-				l.SetLevel(level)
 			}
-			l.SetFormatter(&logger.LogrusTextFormatter{
+
+			l := slog.New(logger.NewSlogTextHandler(os.Stdout, &logger.SlogTextOption{
+				Level:           level,
 				DisableColors:   !cfg.Log.ForceColor,
 				ForceColors:     cfg.Log.ForceColor,
 				ForceFormatting: cfg.Log.ForceFormating,
 				PrefixRE:        regexp.MustCompile(`^(\[.*?\])\s`),
 				FullTimestamp:   true,
 				TimestampFormat: "2006-01-02 15:04:05",
-			})
+			}))
 
-			client := client.New(cfg, logger.WrapLogrus(l))
+			client := client.New(cfg, logger.WrapSlog(l))
 			err = client.Dial()
 			if err != nil {
 				return err
 			}
 
-			signals := make(chan os.Signal, 1)
-			signal.Notify(signals, os.Interrupt, os.Kill)
-			<-signals
+			ctx, cancel := signal.NotifyContext(c.Context(), os.Interrupt)
+			defer cancel()
+			<-ctx.Done()
 			return nil
 		},
 	}

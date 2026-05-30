@@ -2,12 +2,13 @@ package server
 
 import (
 	"fmt"
+	"log/slog"
+	"os"
 	"regexp"
 
 	"github.com/mdouchement/logger"
 	"github.com/mdouchement/seikan/internal/config"
 	"github.com/mdouchement/seikan/internal/server"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -26,25 +27,26 @@ func Command() *cobra.Command {
 				return err
 			}
 
-			l := logrus.New()
+			level := slog.LevelInfo
 			if cfg.Log.Level != "" {
-				level, err := logrus.ParseLevel(cfg.Log.Level)
+				level, err = logger.ParseSlogLevel(cfg.Log.Level)
 				if err != nil {
 					return err
 				}
 				fmt.Println("Log level:", cfg.Log.Level)
-				l.SetLevel(level)
 			}
-			l.SetFormatter(&logger.LogrusTextFormatter{
+
+			l := slog.New(logger.NewSlogTextHandler(os.Stdout, &logger.SlogTextOption{
+				Level:           level,
 				DisableColors:   !cfg.Log.ForceColor,
 				ForceColors:     cfg.Log.ForceColor,
 				ForceFormatting: cfg.Log.ForceFormating,
 				PrefixRE:        regexp.MustCompile(`^(\[.*?\])\s`),
 				FullTimestamp:   true,
 				TimestampFormat: "2006-01-02 15:04:05",
-			})
+			}))
 
-			s, err := server.New(cfg, logger.WrapLogrus(l))
+			s, err := server.New(cfg, logger.WrapSlog(l))
 			if err != nil {
 				return err
 			}

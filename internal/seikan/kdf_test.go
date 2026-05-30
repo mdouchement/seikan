@@ -14,7 +14,7 @@ func TestKDF(t *testing.T) {
 	h := make(map[string]bool)
 	id := basex.GenerateID()
 
-	for i := 0; i < n; i++ {
+	for range n {
 		payload, err := seikan.KDFGenerate(id)
 		assert.NoError(t, err)
 		h[hex.EncodeToString(payload)] = true

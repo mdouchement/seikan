@@ -41,7 +41,7 @@ func Decode(s string) []byte {
 	for i := range decode {
 		decode[i] = -1
 	}
-	for i := 0; i < 58; i++ {
+	for i := range 58 {
 		decode[base58[i]] = int8(i)
 	}
 

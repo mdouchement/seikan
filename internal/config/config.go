@@ -1,11 +1,12 @@
 package config
 
 import (
-	"io/ioutil"
+	"errors"
+	"fmt"
+	"os"
 	"regexp"
 
-	"github.com/pkg/errors"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 type (
@@ -65,8 +66,8 @@ type Client struct {
 }
 
 // Load loads a configuration file.
-func Load(filename string, cfg interface{}) error {
-	payload, err := ioutil.ReadFile(filename)
+func Load(filename string, cfg any) error {
+	payload, err := os.ReadFile(filename)
 	if err != nil {
 		return err
 	}
@@ -94,7 +95,7 @@ func (a *AllowWrapper) UnmarshalYAML(value *yaml.Node) error {
 	for _, expr := range a.IgnoreErrors {
 		re, err := regexp.Compile(expr)
 		if err != nil {
-			return errors.Wrapf(err, "`%s`", expr)
+			return fmt.Errorf("`%s`: %w", expr, err)
 		}
 
 		a.IgnoreErrorsRegexp = append(a.IgnoreErrorsRegexp, re)

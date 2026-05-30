@@ -100,10 +100,7 @@ func (c *ChunkedStream) Write(p []byte) (n int, err error) {
 
 	// Split p in chunks
 	for remaining > 0 {
-		limit = remaining
-		if limit > c.maxsize {
-			limit = c.maxsize
-		}
+		limit = min(remaining, c.maxsize)
 
 		nn, err = c.write(p[n : n+limit])
 		if err != nil {

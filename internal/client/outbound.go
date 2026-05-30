@@ -10,7 +10,6 @@ import (
 	"github.com/mdouchement/seikan/internal/control"
 	"github.com/mdouchement/seikan/internal/seikan"
 	"github.com/mdouchement/seikan/internal/smux"
-	"github.com/pkg/errors"
 )
 
 // Outbound handles client to server tunneling.
@@ -88,7 +87,7 @@ func (out *Outbound) establish(log logger.Logger, source string, destination str
 
 	smux, err := smux.NewClient(log, tun, out.listeners[source], rc)
 	if err != nil {
-		return errors.Wrap(err, "failed to initialize smux session")
+		return fmt.Errorf("failed to initialize smux session: %w", err)
 	}
 	defer smux.Close()
 

@@ -2,11 +2,11 @@ package control
 
 import (
 	"encoding/binary"
+	"fmt"
 	"io"
 	"net"
 
 	"github.com/fxamacker/cbor/v2"
-	"github.com/pkg/errors"
 )
 
 // A PDU is the data sent and received through a net connection for control purposes.
@@ -22,7 +22,7 @@ type PDU interface {
 func Do(c net.Conn, pdu PDU) (PDU, error) {
 	err := EncodeTo(c, pdu)
 	if err != nil {
-		return nil, errors.Wrap(err, "encode")
+		return nil, fmt.Errorf("encode: %w", err)
 	}
 
 	pid := pdu.PID()
@@ -30,11 +30,11 @@ func Do(c net.Conn, pdu PDU) (PDU, error) {
 
 	pdu, err = Decode(c)
 	if err != nil {
-		return nil, errors.Wrap(err, "decode")
+		return nil, fmt.Errorf("decode: %w", err)
 	}
 
 	if pdu.PID() != pid && (pdu.ControlID() != respIDFor(cid) || pdu.ControlID() != ErrorID) {
-		return nil, errors.Errorf("invalid %s response", cid)
+		return nil, fmt.Errorf("invalid %s response", cid)
 	}
 
 	if pdu.ControlID() == ErrorID {
@@ -48,7 +48,7 @@ func Do(c net.Conn, pdu PDU) (PDU, error) {
 func Encode(pdu PDU) ([]byte, error) {
 	payload, err := cbor.Marshal(pdu)
 	if err != nil {
-		return nil, errors.Wrap(err, "CBOR payload")
+		return nil, fmt.Errorf("CBOR payload: %w", err)
 	}
 
 	hdr := pdu.RawHeader()
@@ -60,7 +60,7 @@ func Encode(pdu PDU) ([]byte, error) {
 	p[3] = byte(hdr.cid)
 
 	l := len(hdr.pid)
-	for i := 0; i < l; i++ {
+	for i := range l {
 		p[4+i] = hdr.pid[i]
 	}
 	p[4+l] = 0x00
@@ -84,13 +84,13 @@ func EncodeTo(w io.Writer, pdu PDU) error {
 func Decode(r io.Reader) (PDU, error) {
 	hdr, err := DecodeHeader(r)
 	if err != nil {
-		return nil, errors.Wrap(err, "header")
+		return nil, fmt.Errorf("header: %w", err)
 	}
 
 	p := make([]byte, hdr.Size()-hdr.HeaderSize())
 	_, err = io.ReadFull(r, p)
 	if err != nil {
-		return nil, errors.Wrap(err, "CBOR payload")
+		return nil, fmt.Errorf("CBOR payload: %w", err)
 	}
 
 	var pdu PDU
@@ -127,7 +127,7 @@ func Decode(r io.Reader) (PDU, error) {
 	}
 
 	if err := cbor.Unmarshal(p, pdu); err != nil {
-		return nil, errors.Wrap(err, "CBOR payload")
+		return nil, fmt.Errorf("CBOR payload: %w", err)
 	}
 
 	return pdu, nil

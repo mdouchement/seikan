@@ -1,6 +1,7 @@
 package client
 
 import (
+	"fmt"
 	"net"
 
 	"github.com/hashicorp/go-multierror"
@@ -10,7 +11,6 @@ import (
 	"github.com/mdouchement/seikan/internal/seikan"
 	"github.com/mdouchement/seikan/internal/smux"
 	"github.com/mdouchement/seikan/internal/snet"
-	"github.com/pkg/errors"
 )
 
 type (
@@ -74,7 +74,7 @@ func recipient(c config.Client) string {
 func connect(log logger.Logger, cfg config.Client, t smux.Tunnel) (net.Conn, error) {
 	c, err := snet.Dial(t.Remote)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to connect to server %s", t.Remote)
+		return nil, fmt.Errorf("failed to connect to server %s: %w", t.Remote, err)
 	}
 	snet.EnableKeepAlive(c)
 
@@ -86,12 +86,12 @@ func connect(log logger.Logger, cfg config.Client, t smux.Tunnel) (net.Conn, err
 	derived, err := seikan.KDFGenerate(cfg.Identifier)
 	if err != nil {
 		c.Close()
-		return nil, errors.Wrap(err, "failed to generate derived identifier")
+		return nil, fmt.Errorf("failed to generate derived identifier: %w", err)
 	}
 
 	if _, err = c.Write(derived); err != nil {
 		c.Close()
-		return nil, errors.Wrap(err, "failed to send derived identifier")
+		return nil, fmt.Errorf("failed to send derived identifier: %w", err)
 	}
 
 	//

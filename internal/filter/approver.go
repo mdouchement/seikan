@@ -2,10 +2,10 @@ package filter
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
-
-	"github.com/pkg/errors"
+	"slices"
 )
 
 // ErrHostNotAllowed is returned when a host is not allowed.
@@ -33,10 +33,8 @@ func NewAppover(stricts []string, cidrs []string) (*Approver, error) {
 // Allowed checks if the host `host:port' is allowed or not.
 // Use `errors.Is(err, ErrHostNotAllowed)' to check the error's nature.
 func (f *Approver) Allowed(ctx context.Context, host string) error {
-	for _, allowed := range f.stricts {
-		if host == allowed {
-			return nil
-		}
+	if slices.Contains(f.stricts, host) {
+		return nil
 	}
 
 	// Resolve returns an error if there is no matching CIDRs for the given hostname.
