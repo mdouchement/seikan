@@ -35,9 +35,9 @@ func IsRetryNewError(prev, err error) bool {
 		return false
 	}
 
-	if err != nil && prev == nil {
+	if prev == nil {
 		return true
 	}
 
-	return prev.Error() != prev.Error()
+	return err.Error() != prev.Error()
 }

@@ -10,7 +10,7 @@ import (
 )
 
 func TestBase58(t *testing.T) {
-	for i := 0; i < 20; i++ {
+	for range 20 {
 		b, err := rand.Int(rand.Reader, big.NewInt(100))
 		assert.NoError(t, err)
 

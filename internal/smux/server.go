@@ -9,7 +9,6 @@ import (
 	"github.com/hashicorp/yamux"
 	"github.com/mdouchement/logger"
 	"github.com/mdouchement/seikan/internal/snet"
-	"github.com/pkg/errors"
 )
 
 // A Server allows bidirectional multiplexed streaming over an established tunnel.
@@ -30,7 +29,7 @@ func NewServer(l logger.Logger, tun Tunnel, rc net.Conn) (*Server, error) {
 	cfg.EnableKeepAlive = false
 	session, err := yamux.Server(snet.NopConnCloser(rc), cfg)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to establish session")
+		return nil, fmt.Errorf("failed to establish session: %w", err)
 	}
 	l.Infof("Session oppened %s", tun)
 
@@ -52,7 +51,7 @@ func (s *Server) Listen() error {
 				s.log.Info("session closed")
 				return nil
 			}
-			return errors.Wrap(err, "smux: server: failed to accept stream")
+			return fmt.Errorf("smux: server: failed to accept stream: %w", err)
 		}
 
 		go func() {

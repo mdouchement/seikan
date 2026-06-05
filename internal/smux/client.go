@@ -9,7 +9,6 @@ import (
 	"github.com/hashicorp/yamux"
 	"github.com/mdouchement/logger"
 	"github.com/mdouchement/seikan/internal/snet"
-	"github.com/pkg/errors"
 )
 
 // A Client allows bidirectional multiplexed streaming over an established tunnel.
@@ -28,7 +27,7 @@ func NewClient(l logger.Logger, tun Tunnel, listener *DropListener, rc net.Conn)
 	cfg.EnableKeepAlive = false
 	session, err := yamux.Client(snet.NopConnCloser(rc), cfg)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to establish session")
+		return nil, fmt.Errorf("failed to establish session: %w", err)
 	}
 
 	client := &Client{

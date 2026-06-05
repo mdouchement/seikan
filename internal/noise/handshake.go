@@ -1,10 +1,10 @@
 package noise
 
 import (
+	"fmt"
 	"net"
 
 	"github.com/mdouchement/seikan/pkg/noise"
-	"github.com/pkg/errors"
 )
 
 // Handshake performs the handshake for Identity sender and recipient using the given net.Conn.
@@ -28,7 +28,7 @@ func Handshake(c net.Conn, sender Identity, recipient string, initiator bool) (n
 
 	cipher, err := noise.Handshake(c, options, initiator)
 	if err != nil {
-		return nil, errors.Wrap(err, "handshake")
+		return nil, fmt.Errorf("handshake: %w", err)
 	}
 
 	return noise.NewChunkedConn(c, cipher), nil

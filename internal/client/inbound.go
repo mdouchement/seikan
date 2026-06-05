@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/mdouchement/basex"
 	"github.com/mdouchement/logger"
@@ -10,7 +11,6 @@ import (
 	"github.com/mdouchement/seikan/internal/filter"
 	"github.com/mdouchement/seikan/internal/seikan"
 	"github.com/mdouchement/seikan/internal/smux"
-	"github.com/pkg/errors"
 )
 
 // Inbound handles server to client tunneling.
@@ -92,7 +92,7 @@ func (in *Inbound) establish(destination string) error {
 
 	_, err = control.Do(c, bind)
 	if err != nil {
-		return errors.Wrap(err, "control")
+		return fmt.Errorf("control: %w", err)
 	}
 
 	//
@@ -101,7 +101,7 @@ func (in *Inbound) establish(destination string) error {
 
 	smux, err := smux.NewServer(log, tun, c)
 	if err != nil {
-		return errors.Wrap(err, "failed to initialize smux session")
+		return fmt.Errorf("failed to initialize smux session: %w", err)
 	}
 	defer smux.Close()
 
@@ -125,7 +125,7 @@ func (in *Inbound) getDestinations() (map[string]config.Allow, error) {
 
 	resp, err := control.Do(c, bind)
 	if err != nil {
-		return nil, errors.Wrap(err, "control")
+		return nil, fmt.Errorf("control: %w", err)
 	}
 
 	// Check if server's destinations on client host are allowed.
@@ -149,5 +149,9 @@ func (in *Inbound) getDestinations() (map[string]config.Allow, error) {
 		}
 	}
 
-	return m, errors.Wrap(err, "failed to get destinations")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get destinations: %w", err)
+	}
+
+	return m, nil
 }

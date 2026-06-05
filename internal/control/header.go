@@ -2,9 +2,8 @@ package control
 
 import (
 	"encoding/binary"
+	"fmt"
 	"io"
-
-	"github.com/pkg/errors"
 )
 
 const (
@@ -32,7 +31,7 @@ func DecodeHeader(r io.Reader) (*Header, error) {
 
 	hdr.size = binary.BigEndian.Uint16(p)
 	if hdr.size < minimalHeaderSize {
-		return nil, errors.Errorf("PDU too small: %d < %d", hdr.size, minimalHeaderSize)
+		return nil, fmt.Errorf("PDU too small: %d < %d", hdr.size, minimalHeaderSize)
 	}
 
 	hdr.version = p[2]
@@ -40,7 +39,7 @@ func DecodeHeader(r io.Reader) (*Header, error) {
 
 	hdr.pid, err = readNulTerminatedString(r)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not read PDU identifier")
+		return nil, fmt.Errorf("could not read PDU identifier: %w", err)
 	}
 
 	return hdr, nil
