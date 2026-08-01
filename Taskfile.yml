@@ -4,7 +4,7 @@
 version: '3'
 
 vars:
-  VERSION: 0.2.4
+  VERSION: 0.2.5
   REVISION: { sh: git rev-parse HEAD }
 
 env:
@@ -23,59 +23,29 @@ tasks:
       - task: clean
       - mkdir -p ./dist
 
-      - task: build
-        vars:
-          BINARY_NAME: seikan-linux-amd64
-          ENTRYPOINT: ./cmd/seikan
-          TARGET_DIST: GOOS=linux GOARCH=amd64
+      # Supported dist:    go tool dist list
+      - |
+        pairs=(linux/amd64 linux/arm linux/arm64 darwin/arm64 darwin/amd64)
 
-      - task: checksum
-        vars:
-          BINARY_NAME: seikan-linux-amd64
+        for pair in "${pairs[@]}"
+        do
+          os="${pair%/*}"
+          arch="${pair#*/}"
 
-      - task: build
-        vars:
-          BINARY_NAME: seikan-linux-arm64
-          ENTRYPOINT: ./cmd/seikan
-          TARGET_DIST: GOOS=linux GOARCH=arm64
+          env GOOS=${os} GOARCH=${arch} go build -ldflags "{{.LDFLAGS | splitList "\n" | join " "}}" -o ./dist/seikan-${os}-${arch} ./cmd/seikan
+          ( cd ./dist && checksum --algs="sha256" --append-to checksum.txt seikan-${os}-${arch} )
+        done
+      - |
+        pairs=(windows/amd64)
 
-      - task: checksum
-        vars:
-          BINARY_NAME: seikan-linux-arm64
+        for pair in "${pairs[@]}"
+        do
+          os="${pair%/*}"
+          arch="${pair#*/}"
 
-      - task: build
-        vars:
-          BINARY_NAME: seikan-darwin-amd64
-          ENTRYPOINT: ./cmd/seikan
-          TARGET_DIST: GOOS=darwin GOARCH=amd64
-
-      - task: checksum
-        vars:
-          BINARY_NAME: seikan-darwin-amd64
-
-      - task: build
-        vars:
-          BINARY_NAME: seikan-darwin-arm64
-          ENTRYPOINT: ./cmd/seikan
-          TARGET_DIST: GOOS=darwin GOARCH=arm64
-
-      - task: checksum
-        vars:
-          BINARY_NAME: seikan-darwin-arm64
-
-      - task: build
-        vars:
-          BINARY_NAME: seikan-windows-amd64
-          ENTRYPOINT: ./cmd/seikan
-          TARGET_DIST: GOOS=windows GOARCH=amd64
-
-      - task: checksum
-        vars:
-          BINARY_NAME: seikan-windows-amd64
-
-  build:
-    cmds:
-      - '{{.TARGET_DIST}} go build -ldflags "{{.LDFLAGS | splitList "\n" | join " "}}" -o ./dist/{{.BINARY_NAME}} {{.ENTRYPOINT}}'
+          env GOOS=${os} GOARCH=${arch} go build -ldflags "{{.LDFLAGS | splitList "\n" | join " "}}" -o ./dist/seikan-${os}-${arch}.exe ./cmd/seikan
+          ( cd ./dist && checksum --algs="sha256" --append-to checksum.txt seikan-${os}-${arch}.exe )
+        done
     vars:
       LDFLAGS: |
         -s
@@ -83,7 +53,3 @@ tasks:
         -X main.version={{.VERSION}}
         -X main.revision={{ printf "%.7s" .REVISION }}
         -X main.date={{now | date "2006-01-02~15:04:05"}}
-
-  checksum:
-    cmds:
-      - cd dist && checksum --algs="sha256" --append-to checksum.txt {{.BINARY_NAME}}
